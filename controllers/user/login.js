@@ -92,7 +92,7 @@ export const login = async (req, res) => {
 
       },
 
-      API_SECRET,
+      "redTirth",
 
       { expiresIn: "1d" }
     );
