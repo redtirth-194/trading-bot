@@ -12,7 +12,7 @@ import { dirname, join } from "path";
 
 import mongoose from "mongoose";
 
-// import router from "./routes/index.js";
+import router from "./routes/index.js";
 
 import admin from "firebase-admin";
 
@@ -66,7 +66,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/uploads/.tmp", express.static(join(__dirname, "/uploads/.tmp")));
 
-// app.use(router);
+app.use(router);
 
 // const options = {
 //   key: fs.readFileSync("/home/redspar2/public_html/eTaxi/cert/ssl.key"),
