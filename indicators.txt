@@ -1,0 +1,152 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+
+function StrategyBuilder() {
+  const [indicator, setIndicator] = useState('');
+  const [params, setParams] = useState({ qty: 10, maxQty: 100 }); // Default trade params
+  const [instrument, setInstrument] = useState('');
+
+  // Define indicator-specific inputs
+  const indicatorInputs = {
+    RSI: [
+      { name: 'period', type: 'number', label: 'Period', default: 14 },
+      { name: 'buyThreshold', type: 'number', label: 'Buy if RSI <', default: 30 },
+      { name: 'sellThreshold', type: 'number', label: 'Sell if RSI >', default: 70 },
+    ],
+    MACD: [
+      { name: 'fastPeriod', type: 'number', label: 'Fast EMA', default: 12 },
+      { name: 'slowPeriod', type: 'number', label: 'Slow EMA', default: 26 },
+      { name: 'signalPeriod', type: 'number', label: 'Signal Line', default: 9 },
+    ],
+    ADX: [
+      { name: 'period', type: 'number', label: 'Period', default: 14 },
+      { name: 'threshold', type: 'number', label: 'Trend Strength Threshold (> value)', default: 25 },
+    ],
+    MovingAverage: [
+      { name: 'period', type: 'number', label: 'Period', default: 50 },
+      { 
+        name: 'type', 
+        type: 'select', 
+        label: 'Type', 
+        default: 'SMA', 
+        options: ['SMA', 'EMA'] 
+      },
+      { 
+        name: 'condition', 
+        type: 'select', 
+        label: 'Condition', 
+        default: 'Price > MA', 
+        options: ['Price > MA', 'Price < MA', 'Price Crosses Above MA', 'Price Crosses Below MA'] 
+      },
+    ],
+  };
+
+  const handleParamChange = (name, value) => {
+    setParams({ ...params, [name]: value });
+  };
+
+  const saveStrategy = async () => {
+    try {
+      await axios.post(
+        'http://localhost:3001/strategies',
+        { instrument, indicator, params },
+        { headers: { Authorization: localStorage.getItem('token') } }
+      );
+      alert('Strategy saved!');
+    } catch (err) {
+      console.error('Error saving strategy:', err);
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+      <h2>Create Strategy</h2>
+      <div style={{ marginBottom: '10px' }}>
+        <label>Instrument</label>
+        <select 
+          value={instrument} 
+          onChange={(e) => setInstrument(e.target.value)}
+          style={{ width: '100%', padding: '8px' }}
+        >
+          <option value="">Select Instrument</option>
+          <option value="NSE:RELIANCE-EQ">RELIANCE</option>
+          <option value="NSE:INFY-EQ">INFOSYS</option>
+          {/* Add more via API */}
+        </select>
+      </div>
+      <div style={{ marginBottom: '10px' }}>
+        <label>Indicator</label>
+        <select 
+          value={indicator} 
+          onChange={(e) => {
+            setIndicator(e.target.value);
+            setParams({ qty: params.qty, maxQty: params.maxQty }); // Reset params but keep qty/maxQty
+          }}
+          style={{ width: '100%', padding: '8px' }}
+        >
+          <option value="">Select Indicator</option>
+          <option value="RSI">RSI</option>
+          <option value="MACD">MACD</option>
+          <option value="ADX">ADX</option>
+          <option value="MovingAverage">Moving Average (SMA/EMA)</option>
+        </select>
+      </div>
+      {/* Universal trade params */}
+      <div style={{ marginBottom: '10px' }}>
+        <label>Quantity per Trade</label>
+        <input
+          type="number"
+          value={params.qty || 10}
+          onChange={(e) => handleParamChange('qty', e.target.value)}
+          style={{ width: '100%', padding: '8px' }}
+        />
+      </div>
+      <div style={{ marginBottom: '10px' }}>
+        <label>Max Quantity</label>
+        <input
+          type="number"
+          value={params.maxQty || 100}
+          onChange={(e) => handleParamChange('maxQty', e.target.value)}
+          style={{ width: '100%', padding: '8px' }}
+        />
+      </div>
+      {/* Indicator-specific params */}
+      {indicator && indicatorInputs[indicator] && (
+        <div style={{ marginBottom: '10px' }}>
+          {indicatorInputs[indicator].map((input) => (
+            <div key={input.name} style={{ marginBottom: '10px' }}>
+              <label>{input.label}</label>
+              {input.type === 'select' ? (
+                <select
+                  value={params[input.name] || input.default}
+                  onChange={(e) => handleParamChange(input.name, e.target.value)}
+                  style={{ width: '100%', padding: '8px' }}
+                >
+                  {input.options.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={input.type}
+                  value={params[input.name] || input.default}
+                  onChange={(e) => handleParamChange(input.name, e.target.value)}
+                  style={{ width: '100%', padding: '8px' }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <button 
+        onClick={saveStrategy} 
+        disabled={!instrument || !indicator}
+        style={{ padding: '10px 20px', background: '#007bff', color: 'white', border: 'none', cursor: 'pointer' }}
+      >
+        Save Strategy
+      </button>
+    </div>
+  );
+}
+
+export default StrategyBuilder;
